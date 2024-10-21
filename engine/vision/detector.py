@@ -23,6 +23,22 @@ class Detector(FrameLoader):
         cv2.fillPoly(mask, region, 255)
         masked = cv2.bitwise_and(self.gradient_image, mask)
         return masked
+    
+    def hough_line(self, masked_image, original_weight=0.8, hough_weight=1):
+        # Placeholder 
+        hough_line_image = np.zeros_like(self.ori_image)
+        merged_image = np.zeros_like(self.ori_image)
+        original_copy_image = self.copy_image()
+
+        lines = cv2.HoughLinesP(masked_image, 2, np.pi/180, 100, np.array([]), minLineLength=40, maxLineGap=5)
+        if lines is not None:
+            for line in lines:
+                x1, y1, x2, y2 = line.reshape(4)
+                cv2.line(hough_line_image, (x1, y1), (x2, y2), (255,0,0), 6)
+            
+            merged_image = cv2.addWeighted(original_copy_image, original_weight, hough_line_image, hough_weight)
+        return hough_line_image, merged_image
+
 
 
 
