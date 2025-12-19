@@ -6,10 +6,12 @@ A comprehensive computer vision and deep learning project designed to simulate s
 
 ### 1. Lane Detection (Computer Vision)
 ![Lane Detection Demo](asset/demo/hough_line_detection.gif)
+<br>
 *Real-time lane detection using Canny Edge Detection and Hough Transform on video footage.*
 
 ### 2. Autonomous Driving (Deep Learning)
 ![Autonomous Driving Demo](asset/demo/autonomous_drive.gif)
+<br>
 *The vehicle driving autonomously in the Udacity Simulator using a trained Keras model.*
 
 ---
