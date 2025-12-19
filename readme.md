@@ -105,7 +105,7 @@ Connects to the Udacity Self-Driving Car Simulator to drive the vehicle.
 
 1. **Clone the Repository**
    ```bash
-   git clone [https://github.com/Richterite/autonomous-vehicle.git](https://github.com/Richterite/autonomous-vehicle.git)
+   git clone https://github.com/Richterite/autonomous-vehicle/blob/main/readme.md
    cd autonomous-vehicle
    ```
 2. **Create Virtual Environment**
