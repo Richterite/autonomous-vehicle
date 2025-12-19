@@ -75,6 +75,8 @@ AUTONOMOUS-VEHICLE/
 ├── main.py                    # Entry point for Lane Detection module
 ├── model.h5                   # Pre-trained Keras model (NVIDIA Architecture)
 ├── requirements.txt           # Python dependencies
+├── readme.md
+├── LICENSE
 └── .gitignore
 ```
 
