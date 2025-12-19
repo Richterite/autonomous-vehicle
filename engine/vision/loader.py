@@ -1,55 +1,107 @@
+import os
+import datetime
+from typing import Optional
+
 from cv2 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
+from detector import Detector
+
+
 class FrameLoader:
     """
-    A Class use for loading certain image/frame from different source, namely video or file image.
+    A class used for loading and processing video frames or images.
 
+    It manages the display window and coordinates with the Detector class 
+    to process each frame retrieved from a video source.
     """
 
-    def __init__(self, path: str) -> None:
-        self.ori_image = cv2.imread(path)
-        self.gradient_image = self.to_gradient_image()
-        self.height, self.width = self.ori_image.shape[:2]
-
-    def show_image(self) -> None:
+    def __init__(self, path: str = None, window_name: str = 'result',
+                 window_width: int = 800, window_height: int = 600) -> None:
         """
-        Method to show the image, including it's axis value.
-        This can be use to pinpoint the shape of the mask.
+        Initializes the FrameLoader with window settings and a detector instance.
+
+        Args:
+            path (str, optional): Path to a default image (if applicable). Defaults to None.
+            window_name (str): The title of the display window. Defaults to 'Result'.
+            window_width (int): The width of the window in pixels. Defaults to 800.
+            window_height (int): The height of the window in pixels. Defaults to 600.
         """
-        plt.imshow(self.ori_image)
-        plt.show()
+        # Load an initial image if path is provided (optional usage)
+        self.ori_image = cv2.imread(path) if path else None
 
-    def copy_image(self):
+        self.window_name = window_name
+        self.window_width = window_width
+        self.window_height = window_height
+
+        # Instantiate the detector logic
+        self.detector = Detector()
+
+        # Initialize the window immediately so resizing works
+        cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
+        self.set_window_size(window_width, window_height)
+
+    def load_and_detect(self, video_path: str, region_of_interest, save_to_path: Optional[str] = None) -> None:
         """
-        Method to create copy of the original image, to prevent the image mutation if some operation is applied to the image.
+        Loads a video file, processes each frame to detect lines, and displays the result.
+
+        Args:
+            video_path (str): The file path to the video source.
+            region_of_interest (np.ndarray): The polygon vertices used for masking the road area.
+            save_to_path (str | None, optional): Directory path to save processed frames. 
+                                                 If None, frames are not saved. Defaults to None.
         """
-        return np.copy(self.ori_image)
+        cap = cv2.VideoCapture(video_path)
+        while cap.isOpened():
+            _, frame = cap.read()
+            if frame is None:
+                break
+            detected_line_image = self.detector.detect_lines(
+                frame, region_of_interest)
+            if save_to_path:
+                self._save_frame(cap, detected_line_image, save_to_path)
 
-    
-    def to_gradient_image(self):
+            cv2.imshow(self.window_name, detected_line_image)
+            frame_number = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
+            print(frame_number)
+            if cv2.waitkey(1) & 0xFF == ord('q'):
+                break
+        cap.release()
+        cv2.destroyAllWindows()
+
+    def set_window_size(self, window_width: int, window_height: int) -> bool:
         """
-        Convert image to grayscale then applying gaussian blur into the image can smoothen out the image, although canny function still use blurring and 5 x 5 kernel while in action but using blur first can improve the result.
+        Resizes the display window to the specified dimensions.
 
+        Args:
+            window_width (int): Desired width.
+            window_height (int): Desired height.
+
+        Returns:
+            bool: True if resizing was successful, False otherwise.
         """
-        # Converting image to grayscale can improve edge detection by algortihm due to single color channel that can maximize the each pixel gradient difference
-        gray = cv2.cvtColor(self.copy_image(), cv2.COLOR_RGB2GRAY)
+        try:
+            cv2.resizeWindow(self.window_name, window_width, window_height)
+            self.window_width = window_width
+            self.window_height = window_height
+            return True
+        except cv2.error:
+            return False
 
-        # 5 x 5 kernel is good choice, eventhough you can still choose other kernel size
-        # The standard deviation (param 3) is set to 0
-        blur = cv2.GaussianBlur(gray, (5,5), 0)
+    def _save_frame(self, cap: cv2.VideoCapture, image: np.ndarray, save_path: str) -> None:
+        """
+        Internal helper method to save the current frame to the disk.
 
-        # threshold1: lower bound threshold
-        # threshold2: upper bound threshold
-        ## if the value is greater than upper bound threshold, than it's accepted as edge pixel. 
-        ## if the value is below than lower bound threshold, than it's rejected as edge pixel. 
-        ## if the value in between both threshold, it's accepted only if it's connected with high gradient edge
-        ### Note: the best ratio between lower and upper are 1:2 or 1:3
-        canny = cv2.Canny(blur, 50, 150)
+        Args:
+            cap (cv2.VideoCapture): The video capture object (to get frame count).
+            image (np.ndarray): The image data to save.
+            save_path (str): The directory to save the file in.
+        """
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
 
-        return canny
+        frame_number = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
+        current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f"{current_date}_frame-{frame_number}.jpg"
+        full_path = os.path.join(save_path, filename)
 
-
-        
-
-
+        cv2.imwrite(full_path, image)
